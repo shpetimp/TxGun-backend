@@ -1,0 +1,2 @@
+#!/bin/bash
+bin/dc run django_shell $*

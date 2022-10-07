@@ -1,0 +1,11 @@
+version: "2.1"
+services:
+  tritium-django-dev:
+    build:
+      context: ./django
+    image: tritium-django-dev
+  tritium-django:
+    build:
+      context: ../
+    image: $CI_REGISTRY_IMAGE
+

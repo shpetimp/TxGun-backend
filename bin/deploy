@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+zappa update
+zappa manage production migrate

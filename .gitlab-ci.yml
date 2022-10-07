@@ -1,0 +1,47 @@
+stages:
+  - download
+  - build
+  - deploy
+
+cache:
+  key: constant-key-caches-across-builds
+  paths:
+    - compose/django/pip.cache
+
+download_pip:
+  stage: download
+  image: python:3.7.5
+  script:
+    - mkdir -p compose/django/pip.cache
+    - pip download -r compose/django/requirements.txt --cache-dir=compose/django/pip.cache/
+
+build:
+  stage: build
+  retry: 2
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://localhost:2375
+  only:
+    - tags
+    - master
+  script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+
+deploy_prod:
+  stage: deploy
+  image: registry.netprophet.tech/netp/libs/docker-k8s-util:latest
+  #when: manual
+  script:
+    - export KUBE_URL=https://ctrl.lwb.co:6443
+    - kubectl config set-cluster "$CI_PROJECT_ID" --server="$KUBE_URL" --certificate-authority="$KUBE_CA_PEM_FILE"
+    - kubectl config set-credentials "$CI_PROJECT_ID" --token="$KUBE_TOKEN"
+    - kubectl config set-context "$CI_PROJECT_ID" --cluster="$CI_PROJECT_ID" --user="$CI_PROJECT_ID" --namespace="$KUBE_NAMESPACE"
+    - kubectl config use-context "$CI_PROJECT_ID"
+    - bin/k8s.deploy "production" "$CI_COMMIT_SHA"
+  only:
+    - master

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -e
+
+cd $(dirname $0)/..
+
+CACHE=compose/django/pip.cache/
+
+test -d ./env || virtualenv -p python3.7 env
+
+source env/bin/activate
+
+mkdir -p $CACHE
+sudo chown $USER -R $CACHE
+
+env/bin/pip install -r requirements.txt --cache-dir=$CACHE

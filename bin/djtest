@@ -1,0 +1,1 @@
+djmanage test --settings=tritium.conf.test_settings

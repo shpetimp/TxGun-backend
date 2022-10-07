@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -e
+
+cd $(dirname $0)/..
+
+echo "export ROLE=dev" > .local_env
+
+source .local_env
+
+chmod +x bin/*
+
+echo "Do you want to setup virtualenv?"
+echo "(virtualenv is used as a build cache for docker and for IDE completion)"
+
+read -r -p "run bin/setup.venv [Y/n] " input
+
+case $input in
+    [yY][eE][sS]|[yY])
+      bin/setup.venv
+    ;;
+    [nN][oO]|[nN])
+      echo "OK, skipping virtualenv, hope you know what you're doing..."
+          ;;
+    *)
+  echo "Invalid input..."
+  exit 1
+  ;;
+esac
+
+echo
+echo "Should we build the docker images for development?"
+
+read -r -p "run bin/dc build [Y/n] " input
+
+case $input in
+    [yY][eE][sS]|[yY])
+      bin/dc build
+    ;;
+    [nN][oO]|[nN])
+      echo "Skipping docker images..."
+          ;;
+    *)
+  echo "Invalid input..."
+  exit 1
+  ;;
+esac
+
+echo
+echo "Start the docker services?"
+
+read -r -p "run bin/dc up -d [Y/n] " input
+
+case $input in
+    [yY][eE][sS]|[yY])
+      bin/dc up -d
+      echo
+      echo "Service is running on http://localhost:$DEVELOP_BACKEND_PORT"
+    ;;
+    [nN][oO]|[nN])
+      echo "Skipping docker services..."
+          ;;
+    *)
+  echo "Invalid input..."
+  exit 1
+  ;;
+esac
+
+echo
+echo "Run django migrations for service?"
+
+read -r -p "run bin/djmanage migrate [Y/n] " input
+
+case $input in
+    [yY][eE][sS]|[yY])
+      bin/djmanage migrate
+    ;;
+    [nN][oO]|[nN])
+      echo "Skipping django migrations..."
+          ;;
+    *)
+  echo "Invalid input..."
+  exit 1
+  ;;
+esac

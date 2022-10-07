@@ -1,0 +1,15 @@
+*.pyc
+pyenv
+.pytest_cache
+compose/django/pip.cache
+.sqlite-test-db
+*.csv
+conf/local.py
+.zappa_env
+.local_env
+zappa_settings.json
+.idea
+.vscode
+static
+.ropeproject
+env

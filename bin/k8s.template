@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+
+cd $(dirname $0)
+
+ENV="$1"
+VERSION=$(test -z "$2" && echo "latest" || echo "$2")
+test -z "$CI_PROJECT_TITLE" && echo "You must set \$CI_PROJECT_TITLE" && exit
+USAGE="Usage: k8s_deploy [env] [version=latest]"
+
+
+test -z "$1" && echo $USAGE && exit 1
+
+export NAMESPACE="$CI_PROJECT_TITLE-$ENV"
+export IMAGE="$CI_REGISTRY_IMAGE:$VERSION"
+export POD_IP="\$POD_IP"
+
+envsubst < ../deploy/main.yaml

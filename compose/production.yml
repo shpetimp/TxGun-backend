@@ -1,0 +1,31 @@
+version: '2.1'
+services:
+  psql:
+    image: sameersbn/postgresql:9.6-2
+#    expose:
+#      - '5432'
+    ports:
+    - "5432:5432"
+    environment:
+      DB_NAME: tritium
+      DB_PASS: tritium
+      DB_USER: tritium
+    volumes:
+      - /data/txgun/tritium/production/postgresql:/var/lib/postgresql
+
+  uwsgi:
+    extends:
+      service: tritium-django
+      file: build.yml
+    command: ["/app/compose/django/uwsgi.sh"]
+    ports:
+      - "8000:8000"
+    links:
+      - psql
+    environment:
+      - ENV
+      - SECRET_KEY
+      - SERVICE=runserver
+      - METRIC_ACCESS_KEY_ID=
+      - METRIC_SECRET_ACCESS_KEY=
+  

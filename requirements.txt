@@ -1,0 +1,4 @@
+-r compose/django/requirements.txt
+pylint
+black
+rope

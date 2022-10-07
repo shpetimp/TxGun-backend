@@ -1,0 +1,10 @@
+#!/bin/bash
+
+pushd $(dirname $0)/..
+
+export HASH=$(git --no-pager log -n 1 | head -n 1 | awk '{ print $2 }' )
+
+bin/setup.venv
+
+ROLE=production bin/dc build
+ROLE=production bin/dc push

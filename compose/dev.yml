@@ -1,0 +1,82 @@
+version: '2.1'
+services:
+  psql:
+    image: sameersbn/postgresql:9.6-2
+#    expose:
+#      - '5432'
+    ports:
+    - "5432:5432"
+    environment:
+      DB_NAME: ${CI_PROJECT_TITLE}
+      DB_PASS: ${CI_PROJECT_TITLE}
+      DB_USER: ${CI_PROJECT_TITLE}
+    volumes:
+      - /data/txgun/${CI_PROJECT_TITLE}/postgresql:/var/lib/postgresql
+
+  redis-cluster-master:
+    image: redis:5
+    expose:
+      - '6379'
+
+  django_shell: # This is a one-shot command runner service, for manage.py or bash, it dies immediately
+    extends:
+      service: ${CI_PROJECT_TITLE}-django-dev
+      file: build.yml
+    volumes:
+      - ../:/app
+    links:
+      - psql
+    environment:
+      - ENV
+      - SECRET_KEY
+      - SERVICE=django_shell
+    command: "bash"
+    entrypoint: []
+
+  runserver:
+    extends:
+      service: ${CI_PROJECT_TITLE}-django-dev
+      file: build.yml
+    command: ["python", "manage.py", "runserver_plus", "0.0.0.0:8000"]
+    ports:
+      - "$DEVELOP_BACKEND_PORT:8000"
+    links:
+      - psql
+    volumes:
+      - ../:/app
+    environment:
+      - ENV
+      - SECRET_KEY
+      - SERVICE=runserver
+
+  celery_worker:
+    extends:
+      service: ${CI_PROJECT_TITLE}-django-dev
+      file: build.yml
+    command: ["celery", "-A", "${CI_PROJECT_TITLE}", "worker", "-l", "info"]
+    links:
+      - psql
+      - redis-cluster-master
+    volumes:
+      - ../:/app
+    environment:
+      - ENV
+      - SECRET_KEY
+      - DEBUG=true
+      - SERVICE=celery
+
+  celery_beat:
+    extends:
+      service: ${CI_PROJECT_TITLE}-django-dev
+      file: build.yml
+    command: ["celery", "-A", "${CI_PROJECT_TITLE}", "beat", "-l", "info", "-s", '/tmp/celerybeat-schedule', '--pidfile', '/tmp/celerybeat.pid']
+    links:
+      - psql
+      - redis-cluster-master
+    volumes:
+      - ../:/app
+    environment:
+      - ENV
+      - SECRET_KEY
+      - DEBUG=true
+      - SERVICE=celery-beat

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+test -z "$1" && echo "Usage: k8s.backend-shell [env]" && exit 1
+NS="$CI_PROJECT_TITLE-$1"
+
+CMD=${@:2}
+CMD=$(test -z "$CMD" && echo "bash" || echo "$CMD")
+
+POD=$(kubectl get pod -n $NS -l app=backend -ojsonpath='{.items[0].metadata.name}')
+kubectl exec -ti $POD -n $NS -- $CMD
